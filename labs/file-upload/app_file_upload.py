@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 
-UPLOAD_DIR = Path(tempfile.gettempdir()) / "ai-fix-lab-uploads"
+UPLOAD_DIR = Path(tempfile.gettempdir()) / "ai-fix-lab-uploads" / "data"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
