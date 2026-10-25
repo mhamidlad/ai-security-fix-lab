@@ -1,5 +1,11 @@
 # AI Security Fix Lab
 
+[![CI](https://github.com/mhamidlad/ai-security-fix-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mhamidlad/ai-security-fix-lab/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Security: OWASP Top 10](https://img.shields.io/badge/Security-OWASP%20Top%2010-red.svg)](https://owasp.org/www-project-top-ten/)
+[![Tests: 74 Passing](https://img.shields.io/badge/tests-74%20passing-brightgreen.svg)](tests/)
+
 > **Find the vulnerability. Reproduce it. Fix it. Prove the fix works.**
 
 A collection of intentionally vulnerable code samples with complete remediation demonstrations. Each lab follows the same structure:

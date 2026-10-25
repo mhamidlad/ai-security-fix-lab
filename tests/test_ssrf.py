@@ -1,46 +1,57 @@
-﻿"""Tests for Lab 7: SSRF (Server-Side Request Forgery)."""
+"""Tests for Lab 7: SSRF (Server-Side Request Forgery)."""
+
+from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "labs" / "ssrf"))
-from app_ssrf import fetch_url_vulnerable, fetch_url_secure, ALLOWED_HOSTS
+from app_ssrf import fetch_url_secure, fetch_url_vulnerable
 
 
 class TestSSRFVulnerable:
 
     def test_legitimate_url_might_work(self):
-        """A legitimate URL might fetch (network-dependent)."""
-        # We can't rely on network in tests, so just verify no validation error
-        try:
-            fetch_url_vulnerable("https://api.example.com")
-        except Exception as e:
-            # Network errors are fine â€” the point is no URL validation
-            assert "ValueError" not in type(e).__name__ or "not in allowlist" not in str(e)
+        """A legitimate URL fetches without validation error."""
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = b"Hello from API"
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = fetch_url_vulnerable("https://api.example.com")
+            assert result == "Hello from API"
 
     def test_localhost_url_not_blocked(self):
         """VULNERABILITY: Internal localhost URLs are not blocked."""
-        try:
-            fetch_url_vulnerable("http://127.0.0.1:8080/admin")
-        except Exception:
-            pass  # May fail due to connection, but not due to validation
-        # The key point: there's NO validation blocking internal URLs
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = b"Admin console data"
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = fetch_url_vulnerable("http://127.0.0.1:8080/admin")
+            assert result == "Admin console data"
+            mock_urlopen.assert_called_once_with("http://127.0.0.1:8080/admin")
 
     def test_metadata_endpoint_not_blocked(self):
         """VULNERABILITY: Cloud metadata endpoints are not blocked."""
-        try:
-            fetch_url_vulnerable("http://169.254.169.254/latest/meta-data/")
-        except Exception:
-            pass  # May fail, but NOT due to security validation
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = b"ami-id\ninstance-id"
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = fetch_url_vulnerable("http://169.254.169.254/latest/meta-data/")
+            assert "ami-id" in result
+            mock_urlopen.assert_called_once_with("http://169.254.169.254/latest/meta-data/")
 
     def test_file_protocol_not_blocked(self):
         """VULNERABILITY: file:// protocol is not blocked."""
-        try:
-            fetch_url_vulnerable("file:///etc/passwd")
-        except Exception:
-            pass  # May fail, but NOT due to scheme validation
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = b"root:x:0:0:root:/root:/bin/bash"
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = fetch_url_vulnerable("file:///etc/passwd")
+            assert "root:" in result
+            mock_urlopen.assert_called_once_with("file:///etc/passwd")
 
 
 class TestSSRFSecure:
@@ -71,13 +82,10 @@ class TestSSRFSecure:
             fetch_url_secure("ftp://example.com/file.txt")
 
     def test_allowlisted_host_accepted(self):
-        """SECURE: Allowlisted hosts pass validation."""
-        # We can't test actual network, but the validation should pass
-        # (it'll fail later on DNS/network, which is expected)
-        try:
-            fetch_url_secure("https://api.example.com")
-        except ValueError as e:
-            # If it's a ValueError about allowlist, that's a bug
-            assert "not in the allowlist" not in str(e)
-        except Exception:
-            pass  # Network errors are expected and fine
+        """SECURE: Allowlisted hosts pass validation and fetch safely."""
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = b'{"status": "ok"}'
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = fetch_url_secure("https://api.example.com")
+            assert result == '{"status": "ok"}'
