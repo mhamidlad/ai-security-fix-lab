@@ -3,6 +3,8 @@
 This code is intentionally vulnerable. Do not use in production.
 """
 
+from __future__ import annotations
+
 import sqlite3
 
 
